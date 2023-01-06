@@ -4,109 +4,87 @@ from yaml.loader import SafeLoader
 import subprocess
 from datetime import datetime
 import tarfile
+import json
 
 storage_device_to_mount = None
-compose_locations = [
-    "/home/tobi/WebServices/docker-compose.yaml",
-    "/home/tobi/WebServicesJitcom/docker-compose.yaml",
-]
-mount_location = "/mnt/temp_compose_backup_mount" # set to none if not needed and just backup to disk
+mount_location = None
+
 backup_location = "/home/tobi/backups"
 backup_owner = "tobi"
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
 
-# arapiscaffold_vmysql
 
-class BackupCompose:
+def set_premission(file):
+    p = subprocess.Popen(["chown", f"{backup_owner}:{backup_owner}", file], stdout=subprocess.PIPE)
+    (output, err) = p.communicate()
+    p_status = p.wait()
+    print("Command output : ", output.decode())
+    print("Command exit status/return code : ", p_status)
 
-    def __init__(self, parsed_compose, compose_file_path):
-        self.parsed_compose = parsed_compose
-        self.compose_file_path = compose_file_path
-        self.folder_file_path = os.path.dirname(self.compose_file_path)
-        self.project_folder_name = os.path.basename(self.folder_file_path)
 
-    def backup(self):
-        # stop all services
-        self.service_cmd(["docker", "compose", "stop"])
+def service_cmd(cmd):
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    (output, err) = p.communicate()
+    p_status = p.wait()
+    print("Command output : ", output.decode())
+    print("Command exit status/return code : ", p_status)
+    return output
 
-        for service_name in self.parsed_compose["services"]:
-            print(service_name)
-            self.backup_service(service_name)
 
-        # start them again
-        self.service_cmd(["docker", "compose", "start"])
+def backup_folder(folder, service_name, vol_name):
+    backup_name = f"{service_name}-{vol_name}-{datetime.now().strftime('%Y%m%d')}.tar.gz"
+    backup_file = os.path.join(backup_location, backup_name)
+    with tarfile.open(backup_file, "w:gz") as tar:
+        for fn in os.listdir(folder):
+            p = os.path.join(folder, fn)
+            tar.add(p, arcname=fn)
 
-    def service_cmd(self, cmd):
-        p = subprocess.Popen(cmd, cwd=self.folder_file_path, stdout=subprocess.PIPE)
-        (output, err) = p.communicate()
-        p_status = p.wait()
-        print("Command output : ", output.decode())
-        print("Command exit status/return code : ", p_status)
+    set_premission(backup_file)
 
-    def backup_folder(self, folder, service_name):
-        backup_name = f"{self.project_folder_name}-{service_name}-{datetime.now().strftime('%Y%m%d')}.tar.gz"
-        backup_file = os.path.join(backup_location, backup_name)
-        with tarfile.open(backup_file, "w:gz") as tar:
-            for fn in os.listdir(folder):
-                p = os.path.join(folder, fn)
-                tar.add(p, arcname=fn)
 
-        self.set_premission(backup_file)
+def backup_container(info):
+    name = info["Name"][1:]
+    print("backup container: " + name)
+    print(info["Mounts"])
+    for mount in info["Mounts"]:
+        mount_type = mount["Type"]
+        if mount_type == "volume":
+            # stored in generic location
+            backup_folder(mount["Source"], name, mount["Name"])
+        elif mount_type == "bind" and "docker.sock" not in mount["Source"]:
+            source = mount["Source"]
+            backup_folder(source, name, source.split("/")[-1])
 
-    def set_premission(self, file):
-        p = subprocess.Popen(["chown", f"{backup_owner}:{backup_owner}", file], stdout=subprocess.PIPE)
-        (output, err) = p.communicate()
-        p_status = p.wait()
-        print("Command output : ", output.decode())
-        print("Command exit status/return code : ", p_status)
 
-    def backup_service(self, service_name):
-        service = self.parsed_compose["services"][service_name]
-        print(service)
+def backup(containerIds):
+    infos = json.loads(service_cmd(["docker", "inspect"] + containerIds).decode("utf-8"))
+    for info in infos:
+        backup_container(info)
 
-        # backup any volumes that the service might have
-        if "volumes" in service:
-            volumes = service["volumes"]
-            for volume in volumes:
-                self.backup_volume(volume, service_name)
 
-    def backup_volume(self, volume, service_name):
-        # stop the service
-        vol_name = volume.split(":")[0]
-        print(volume)
-        if volume.startswith("./"):
-            # locally bindet volume
-            print("saving folder mapped volume")
-            self.backup_folder(os.path.join(self.folder_file_path, vol_name[2:]), service_name)
-        elif "docker.sock" not in volume:
-            # dont save mapped socket
-            print("saving managed volume")
-            self.backup_folder(os.path.join(managed_volume_location, f"{self.project_folder_name.lower()}_{vol_name}"),
-                               service_name)
+def backup_all():
+    container_ids = service_cmd(["docker", "ps", "-a", "-q"]).decode("utf-8").split("\n")
+
+    # stop all
+    service_cmd(["docker", "stop"] + container_ids)
+
+    backup(container_ids)
+
+    # start all
+    service_cmd(["docker", "start"] + container_ids)
+
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     if storage_device_to_mount is not None:
         os.makedirs(mount_location, exist_ok=True)
-        p = subprocess.Popen(["mount", storage_device_to_mount, mount_location], stdout=subprocess.PIPE)
-        (output, err) = p.communicate()
-        p_status = p.wait()
-        print("Command output : ", output.decode())
-        print("Command exit status/return code : ", p_status)
+        service_cmd(["mount", storage_device_to_mount, mount_location])
 
     os.makedirs(backup_location, exist_ok=True)
 
-    for compose in compose_locations:
-        base_location = os.path.dirname(compose)
-        with open(compose) as c:
-            yaml_compose = yaml.load(c, Loader=SafeLoader)
-            BackupCompose(yaml_compose, compose).backup()
+    backup_all()
 
     if storage_device_to_mount is not None:
-        p = subprocess.Popen(["umount", storage_device_to_mount, mount_location], stdout=subprocess.PIPE)
-        (output, err) = p.communicate()
-        p_status = p.wait()
-        print("Command output : ", output.decode())
-        print("Command exit status/return code : ", p_status)
+        service_cmd(["umount", storage_device_to_mount, mount_location])
