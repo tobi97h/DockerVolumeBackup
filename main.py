@@ -80,7 +80,8 @@ class BackupCompose:
             # locally bindet volume
             print("saving folder mapped volume")
             self.backup_folder(os.path.join(self.folder_file_path, vol_name[2:]), service_name)
-        else:
+        elif "docker.sock" not in volume:
+            # dont save mapped socket
             print("saving managed volume")
             self.backup_folder(os.path.join(managed_volume_location, f"{self.project_folder_name.lower()}_{vol_name}"),
                                service_name)
