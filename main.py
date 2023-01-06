@@ -7,8 +7,8 @@ import tarfile
 
 storage_device_to_mount = None
 compose_locations = [
-    "/home/tobi/Documents/WebServices/docker-compose.yaml",
-    "/home/tobi/Documents/WebServicesJitcom/docker-compose.yaml",
+    "/home/tobi/WebServices/docker-compose.yaml",
+    "/home/tobi/WebServicesJitcom/docker-compose.yaml",
 ]
 mount_location = "/mnt/temp_compose_backup_mount" # set to none if not needed and just backup to disk
 backup_location = "/home/tobi/backups"
