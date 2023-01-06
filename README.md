@@ -1,0 +1,2 @@
+# Setup automount linux
+
