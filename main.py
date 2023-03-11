@@ -9,8 +9,8 @@ import json
 storage_device_to_mount = None
 mount_location = None
 
-backup_location = "/home/tobi/backups"
-backup_owner = "tobi"
+backup_location = os.getenv("BACKUP_LOC")
+backup_owner = os.getenv("BACKUP_OWNER")
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
