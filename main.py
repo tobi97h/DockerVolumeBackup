@@ -27,8 +27,12 @@ class Deleter:
 
         for root, dirs, files in os.walk(self.path, topdown=False):
             for file in files:
+                print(file)
                 file_path = os.path.join(root, file)
                 file_modified_time = os.path.getmtime(file_path)
+                print(file_modified_time)
+                print(cutoff)
+                print()
                 if file_modified_time < cutoff:
                     os.remove(file_path)
 
@@ -101,10 +105,10 @@ if __name__ == '__main__':
 
     os.makedirs(backup_location, exist_ok=True)
 
-    backup_all()
+    #backup_all()
 
-    # delete backups older than 30 days from fetch location
-    Deleter(backup_location, 30)
+    # delete backups older than 10 days from fetch location
+    Deleter(backup_location, 10)
 
     if storage_device_to_mount is not None:
         service_cmd(["umount", storage_device_to_mount, mount_location])
