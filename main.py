@@ -5,6 +5,7 @@ import subprocess
 from datetime import datetime
 import tarfile
 import json
+import time
 
 storage_device_to_mount = None
 mount_location = None
@@ -14,6 +15,22 @@ backup_owner = os.getenv("BACKUP_OWNER")
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
+
+class Deleter:
+    def __init__(self, path, days):
+        self.path = path
+        self.days = days
+
+    def delete(self):
+        now = time.time()
+        cutoff = now - (self.days * 86400)
+
+        for root, dirs, files in os.walk(self.path, topdown=False):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_modified_time = os.path.getmtime(file_path)
+                if file_modified_time < cutoff:
+                    os.remove(file_path)
 
 
 def set_premission(file):
@@ -85,6 +102,9 @@ if __name__ == '__main__':
     os.makedirs(backup_location, exist_ok=True)
 
     backup_all()
+
+    # delete backups older than 30 days from fetch location
+    Deleter(backup_location, 30)
 
     if storage_device_to_mount is not None:
         service_cmd(["umount", storage_device_to_mount, mount_location])
