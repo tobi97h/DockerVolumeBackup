@@ -11,6 +11,7 @@ import logging_loki
 
 
 # logging
+logging.basicConfig(level = logging.INFO)
 loki_url = os.getenv("LOKI_URL")
 loki_user = os.getenv("LOKI_USER")
 loki_password = os.getenv("LOKI_PWD")
@@ -25,7 +26,7 @@ if loki_url is not None:
         version="1",
     )
     logger.addHandler(handler)
-    logger.error("added loki handler")
+    logger.info("added loki handler")
 
 
 # conf
@@ -104,7 +105,6 @@ def backup(containerIds):
 
 
 def backup_main():
-    logger.info("backup_main")
 
     container_ids = service_cmd(["docker", "ps", "-a", "-q"]).decode("utf-8").split("\n")
     logger.info("all containers: " + ", ".join(container_ids))
