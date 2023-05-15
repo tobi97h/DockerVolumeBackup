@@ -104,6 +104,8 @@ def backup(containerIds):
 
 
 def backup_main():
+    logger.info("backup_main")
+
     container_ids = service_cmd(["docker", "ps", "-a", "-q"]).decode("utf-8").split("\n")
     logger.info("all containers: " + ", ".join(container_ids))
 
