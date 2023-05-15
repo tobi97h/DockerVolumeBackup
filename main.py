@@ -112,7 +112,7 @@ def backup_main():
     container_ids_to_exclude = []
 
     if containers_to_exclude is not None:
-        for container_name in containers_to_exclude.split(", "):
+        for container_name in containers_to_exclude.split(","):
             container_ids_to_exclude.append(service_cmd(["docker", "ps", "-aqf", f"name=^{container_name}$"]).decode("utf-8"))
 
     logger.info("containers to exclude: " + ", ".join(container_ids_to_exclude))
