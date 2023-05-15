@@ -32,6 +32,7 @@ if loki_url is not None:
 # conf
 backup_location = os.getenv("BACKUP_LOC")
 backup_owner = os.getenv("BACKUP_OWNER")
+allowed_source_root = os.getenv("ALLOWED_SOURCE_ROOT")
 
 containers_to_exclude = os.getenv("CONTAINER_EXCLUDE")
 
@@ -92,7 +93,7 @@ def backup_container(info):
         if mount_type == "volume":
             # stored in generic location
             backup_folder(mount["Source"], name, mount["Name"])
-        elif mount_type == "bind" and "docker.sock" not in mount["Source"]:
+        elif mount_type == "bind" and "docker.sock" not in mount["Source"] and source.startswith(allowed_source_root):
             source = mount["Source"]
             backup_folder(source, name, source.split("/")[-1])
 

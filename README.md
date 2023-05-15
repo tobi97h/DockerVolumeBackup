@@ -22,6 +22,7 @@ LOKI_URL=
 LOKI_USER=
 LOKI_PWD=
 CONTAINER_EXCLUDE=
+ALLOWED_SOURCE_ROOT=
 0 0 * * 0 python3 /path/to/main.py
 ```
 
