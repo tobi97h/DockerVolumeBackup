@@ -6,7 +6,8 @@ from datetime import datetime
 import tarfile
 import json
 import time
-
+import logging
+import logging_loki
 
 # logging
 loki_url = os.getenv("LOKI_URL")
