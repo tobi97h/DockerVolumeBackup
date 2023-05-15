@@ -90,11 +90,12 @@ def backup_container(info):
     logger.info(info["Mounts"])
     for mount in info["Mounts"]:
         mount_type = mount["Type"]
+        source = mount["Source"]
         if mount_type == "volume":
             # stored in generic location
-            backup_folder(mount["Source"], name, mount["Name"])
-        elif mount_type == "bind" and "docker.sock" not in mount["Source"] and mount["Source"].startswith(allowed_source_root):
-            backup_folder(mount["Source"], name, mount["Source"].split("/")[-1])
+            backup_folder(source, name, mount["Name"])
+        elif mount_type == "bind" and "docker.sock" not in source and source.startswith(allowed_source_root) and os.path.isdir(source):
+            backup_folder(source, name, source.split("/")[-1])
 
 
 def backup(containerIds):
