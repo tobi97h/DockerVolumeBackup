@@ -57,7 +57,7 @@ def set_premission(file):
     (output, err) = p.communicate()
     p_status = p.wait()
     logger.info("Command output : " +  output.decode())
-    logger.info("Command exit status/return code : " +  p_status)
+    logger.info("Command exit status/return code : " +  str(p_status))
 
 
 def service_cmd(cmd):
@@ -65,7 +65,7 @@ def service_cmd(cmd):
     (output, err) = p.communicate()
     p_status = p.wait()
     logger.info("Command output : " + output.decode())
-    logger.info("Command exit status/return code : " + p_status)
+    logger.info("Command exit status/return code : " + str(p_status))
     return output
 
 
