@@ -9,22 +9,23 @@ import time
 import logging
 import logging_loki
 
+
 # logging
 loki_url = os.getenv("LOKI_URL")
 loki_user = os.getenv("LOKI_USER")
 loki_password = os.getenv("LOKI_PWD")
 
-logger = logging.getLogger("DockerVolumeBackup")
+logger = logging.getLogger("VolumeBackup")
 
 if loki_url is not None:
     handler = logging_loki.LokiHandler(
-        url=loki_url + "/loki/api/v1/push",
-        tags={"application": "DockerVolumeBackup"},
+        url=loki_url+"/loki/api/v1/push",
+        tags={"application": "VolumeBackup"},
         auth=(loki_user, loki_password),
         version="1",
     )
     logger.addHandler(handler)
-    logger.info("added loki handler")
+    logger.error("added loki handler")
 
 
 # conf
