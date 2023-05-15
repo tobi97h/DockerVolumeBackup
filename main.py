@@ -18,12 +18,13 @@ logger = logging.getLogger("DockerVolumeBackup")
 
 if loki_url is not None:
     handler = logging_loki.LokiHandler(
-    url=loki_url + "/loki/api/v1/push",
-    tags={"application": "DockerVolumeBackup"},
-    auth=(loki_user, loki_password),
-    version="1",
+        url=loki_url + "/loki/api/v1/push",
+        tags={"application": "DockerVolumeBackup"},
+        auth=(loki_user, loki_password),
+        version="1",
     )
     logger.addHandler(handler)
+    logger.info("added loki handler")
 
 
 # conf
@@ -31,6 +32,7 @@ backup_location = os.getenv("BACKUP_LOC")
 backup_owner = os.getenv("BACKUP_OWNER")
 
 containers_to_exclude = os.getenv("CONTAINER_EXCLUDE")
+print(containers_to_exclude)
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
