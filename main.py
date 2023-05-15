@@ -34,7 +34,6 @@ backup_location = os.getenv("BACKUP_LOC")
 backup_owner = os.getenv("BACKUP_OWNER")
 
 containers_to_exclude = os.getenv("CONTAINER_EXCLUDE")
-print(containers_to_exclude)
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
@@ -86,8 +85,8 @@ def backup_folder(folder, service_name, vol_name):
 
 def backup_container(info):
     name = info["Name"][1:]
-    print("backup container: " + name)
-    print(info["Mounts"])
+    logger.info("backup container: " + name)
+    logger.info(info["Mounts"])
     for mount in info["Mounts"]:
         mount_type = mount["Type"]
         if mount_type == "volume":
