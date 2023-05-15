@@ -102,7 +102,7 @@ def backup(containerIds):
 
 def backup_main():
     container_ids = service_cmd(["docker", "ps", "-a", "-q"]).decode("utf-8").split("\n")
-    logger.info("all containers: " + container_ids.join(", "))
+    logger.info("all containers: " + ", ".join(container_ids))
 
     container_ids_to_exclude = []
 
@@ -110,12 +110,12 @@ def backup_main():
         for container_name in containers_to_exclude.split(", "):
             container_ids_to_exclude.append(service_cmd(["docker", "ps", "-aqf", f"name=^{container_name}$"]))
 
-    logger.info("containers to exclude: " + container_ids_to_exclude.join(","))
+    logger.info("containers to exclude: " + ", ".join(container_ids_to_exclude))
     # exclude what needs to be excluded
     container_ids = [i for i in container_ids if i not in container_ids_to_exclude]
 
 
-    logger.info("containers that will be stopped: " + container_ids.join(", "))
+    logger.info("containers that will be stopped: " + ", ".join(container_ids))
 
     # stop all
     service_cmd(["docker", "stop"] + container_ids)
