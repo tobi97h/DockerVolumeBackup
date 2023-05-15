@@ -93,9 +93,8 @@ def backup_container(info):
         if mount_type == "volume":
             # stored in generic location
             backup_folder(mount["Source"], name, mount["Name"])
-        elif mount_type == "bind" and "docker.sock" not in mount["Source"] and source.startswith(allowed_source_root):
-            source = mount["Source"]
-            backup_folder(source, name, source.split("/")[-1])
+        elif mount_type == "bind" and "docker.sock" not in mount["Source"] and mount["Source"].startswith(allowed_source_root):
+            backup_folder(mount["Source"], name, mount["Source"].split("/")[-1])
 
 
 def backup(containerIds):
