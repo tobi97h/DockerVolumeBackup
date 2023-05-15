@@ -7,11 +7,29 @@ import tarfile
 import json
 import time
 
-storage_device_to_mount = None
-mount_location = None
 
+# logging
+loki_url = os.getenv("LOKI_URL")
+loki_user = os.getenv("LOKI_USER")
+loki_password = os.getenv("LOKI_PWD")
+
+logger = logging.getLogger("DockerVolumeBackup")
+
+if loki_url is not None:
+    handler = logging_loki.LokiHandler(
+    url=loki_url + "/loki/api/v1/push",
+    tags={"application": "DockerVolumeBackup"},
+    auth=(loki_user, loki_password),
+    version="1",
+    )
+    logger.addHandler(handler)
+
+
+# conf
 backup_location = os.getenv("BACKUP_LOC")
 backup_owner = os.getenv("BACKUP_OWNER")
+
+containers_to_exclude = os.getenv("CONTAINER_EXCLUDE")
 
 # constants
 managed_volume_location = "/var/lib/docker/volumes/"
@@ -37,16 +55,16 @@ def set_premission(file):
     p = subprocess.Popen(["chown", f"{backup_owner}:{backup_owner}", file], stdout=subprocess.PIPE)
     (output, err) = p.communicate()
     p_status = p.wait()
-    print("Command output : ", output.decode())
-    print("Command exit status/return code : ", p_status)
+    logger.info("Command output : " +  output.decode())
+    logger.info("Command exit status/return code : " +  p_status)
 
 
 def service_cmd(cmd):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     (output, err) = p.communicate()
     p_status = p.wait()
-    print("Command output : ", output.decode())
-    print("Command exit status/return code : ", p_status)
+    logger.info("Command output : " + output.decode())
+    logger.info("Command exit status/return code : " + p_status)
     return output
 
 
@@ -81,13 +99,30 @@ def backup(containerIds):
         backup_container(info)
 
 
-def backup_all():
+def backup_main():
     container_ids = service_cmd(["docker", "ps", "-a", "-q"]).decode("utf-8").split("\n")
+    logger.info("all containers: " + container_ids.join(", "))
+
+    container_ids_to_exclude = []
+
+    if containers_to_exclude is not None:
+        for container_name in containers_to_exclude.split(", "):
+            container_ids_to_exclude.append(service_cmd(["docker", "ps", "-aqf", f"name=^{container_name}$"]))
+
+    logger.info("containers to exclude: " + container_ids_to_exclude.join(","))
+    # exclude what needs to be excluded
+    container_ids = [i for i in container_ids if i not in container_ids_to_exclude]
+
+
+    logger.info("containers that will be stopped: " + container_ids.join(", "))
 
     # stop all
     service_cmd(["docker", "stop"] + container_ids)
 
-    backup(container_ids)
+    try:
+        backup(container_ids)
+    except Exception as e:
+        logger.error(str(e))
 
     # start all
     service_cmd(["docker", "start"] + container_ids)
@@ -95,16 +130,10 @@ def backup_all():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    if storage_device_to_mount is not None:
-        os.makedirs(mount_location, exist_ok=True)
-        service_cmd(["mount", storage_device_to_mount, mount_location])
 
     os.makedirs(backup_location, exist_ok=True)
 
-    backup_all()
+    backup_main()
 
     # delete backups older than 30 days from fetch location
     Deleter(backup_location, 30).delete()
-
-    if storage_device_to_mount is not None:
-        service_cmd(["umount", storage_device_to_mount, mount_location])

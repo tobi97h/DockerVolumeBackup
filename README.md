@@ -9,6 +9,7 @@ Install the following dependencies:
 ```
 apt install python3-pip
 pip3 install --upgrade pip
+pip3 install python-logging-loki
 ```
 
 Setup the cron job:
@@ -17,6 +18,10 @@ Setup the cron job:
 crontab -e
 BACKUP_LOC=
 BACKUP_OWNER=
+LOKI_URL=
+LOKI_USER=
+LOKI_PWD=
+CONTAINER_EXCLUDE=
 0 0 * * 0 python3 /path/to/main.py
 ```
 
